@@ -3,6 +3,8 @@ import couch1 from "@/assets/couch1.jpg";
 import couch2 from "@/assets/couch2.jpg";
 import couch3 from "@/assets/couch3.jpg";
 import couch4 from "@/assets/couch4.jpg";
+import couch5 from "@/assets/couch5.jpg";
+import couch6 from "@/assets/couch6.jpg";
 
 interface CouchListing {
   id: string;
@@ -20,27 +22,27 @@ const mockListings: CouchListing[] = [
     id: "1",
     image: couch1,
     price: "$25",
-    title: "Modern Blue Couch",
+    title: "Leather Corner Couch",
     host: "Sarah M.",
     location: "Downtown Campus",
     availableDates: "Oct 15-25",
-    description: "Comfortable modern couch perfect for studying or relaxing. Located in a quiet apartment near campus."
+    description: "Comfortable leather couch with plants and natural lighting. Perfect for studying or relaxing near campus."
   },
   {
     id: "2", 
     image: couch2,
     price: "$18",
-    title: "Cozy Grey Sectional",
+    title: "Cozy Beige Sectional",
     host: "Mike T.",
     location: "North Dorms",
     availableDates: "Oct 20-30",
-    description: "Spacious sectional with extra pillows. Great for overnight stays during exam week."
+    description: "Spacious sectional with great natural light. Great for overnight stays during exam week."
   },
   {
     id: "3",
     image: couch3,
     price: "$22",
-    title: "Study Loveseat",
+    title: "Modern Grey Sectional",
     host: "Emma K.",
     location: "Library District",
     availableDates: "Oct 18-28",
@@ -49,12 +51,32 @@ const mockListings: CouchListing[] = [
   {
     id: "4",
     image: couch4,
-    price: "$30",
-    title: "Convertible Futon",
+    price: "$28",
+    title: "Green Corduroy Sectional",
     host: "Alex R.",
     location: "Student Village",
     availableDates: "Oct 16-26",
-    description: "Converts to a bed for maximum comfort. Great for extended stays."
+    description: "Unique green sectional with plants and cozy vibes. Great for extended stays."
+  },
+  {
+    id: "5",
+    image: couch5,
+    price: "$32",
+    title: "Modular Beige Sofa",
+    host: "Jamie L.",
+    location: "Arts Quarter",
+    availableDates: "Oct 22-Nov 1",
+    description: "Spacious modular sofa in bright apartment. Perfect for creative students."
+  },
+  {
+    id: "6",
+    image: couch6,
+    price: "$35",
+    title: "Designer Grey Sectional",
+    host: "Taylor B.",
+    location: "Campus Heights",
+    availableDates: "Oct 19-29",
+    description: "Modern designer couch in beautiful apartment with exposed beams. Premium comfort."
   }
 ];
 
