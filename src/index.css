@@ -47,6 +47,7 @@
     --sketch-light: 210 40% 95%;
     --sketch-medium: 210 80% 60%;
     --sketch-dark: 210 100% 25%;
+    --offer-card-bg: 200 60% 80%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -98,7 +99,7 @@
 
   /* Hand-drawn effect for cards */
   .sketch-card {
-    background: hsl(var(--card));
+    background: hsl(var(--offer-card-bg));
     border: 2px solid hsl(var(--border));
     border-radius: calc(var(--radius) + 2px);
     transform: rotate(-0.5deg);
