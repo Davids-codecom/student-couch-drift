@@ -15,7 +15,7 @@ export default {
     extend: {
       colors: {
         border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
+        input: "hsl(var(--input))", 
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -47,6 +47,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Custom sketch colors
+        "sketch-blue": "hsl(var(--sketch-blue))",
+        "sketch-light": "hsl(var(--sketch-light))",
+        "sketch-medium": "hsl(var(--sketch-medium))",
+        "sketch-dark": "hsl(var(--sketch-dark))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
