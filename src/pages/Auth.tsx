@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Temporary mock authentication for testing
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,14 +19,11 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
-      }
-    };
-    checkUser();
+    // Check if user is already logged in (from localStorage)
+    const userData = localStorage.getItem('currentUser');
+    if (userData) {
+      navigate("/listings");
+    }
   }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -41,34 +38,39 @@ const Auth = () => {
     }
 
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: fullName,
-            user_role: userRole,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success!",
-        description: "Please check your email to confirm your account.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      try {
+        // Store user data in localStorage for now
+        const userData = {
+          id: Date.now().toString(),
+          email,
+          full_name: fullName,
+          user_role: userRole,
+          created_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        toast({
+          title: "Success!",
+          description: "Account created successfully. You can now browse listings.",
+        });
+        
+        // Navigate to listings page
+        navigate("/listings");
+        
+      } catch (error: any) {
+        toast({
+          title: "Signup Error",
+          description: "Failed to create account. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }, 1000);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -83,24 +85,38 @@ const Auth = () => {
     }
 
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      navigate("/");
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      try {
+        // For demo purposes, accept any email/password combination
+        const userData = {
+          id: Date.now().toString(),
+          email,
+          full_name: email.split('@')[0], // Use email prefix as name
+          user_role: 'renter' as const,
+          created_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        toast({
+          title: "Success!",
+          description: "Signed in successfully.",
+        });
+        
+        navigate("/listings");
+        
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: "Failed to sign in. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }, 1000);
   };
 
   return (

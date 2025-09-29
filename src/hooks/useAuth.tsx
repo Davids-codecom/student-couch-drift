@@ -1,6 +1,4 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
 
 type Profile = {
   id: string;
@@ -13,8 +11,8 @@ type Profile = {
 };
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: Profile | null;
+  session: any;
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
@@ -37,70 +35,38 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      setProfile(null);
-    }
-  };
-
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer profile fetch to avoid potential deadlock
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
+    // Check localStorage for user data
+    const checkUser = () => {
+      try {
+        const userData = localStorage.getItem('currentUser');
+        if (userData) {
+          const parsed = JSON.parse(userData);
+          setUser(parsed);
         }
-        
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('currentUser');
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    checkUser();
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('currentUser');
+    setUser(null);
   };
 
   const value = {
     user,
-    session,
-    profile,
+    session: user ? { user } : null,
+    profile: user,
     loading,
     signOut,
   };
