@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import couch1 from "@/assets/couch1.jpg";
 import couch2 from "@/assets/couch2.jpg";
 import couch3 from "@/assets/couch3.jpg";
@@ -82,6 +84,7 @@ const mockListings: CouchListing[] = [
 
 const CouchListings = () => {
   const navigate = useNavigate();
+  const { signOut, profile } = useAuth();
 
   const handleCouchClick = (couch: CouchListing) => {
     navigate(`/couch/${couch.id}`, { state: { couch } });
@@ -90,13 +93,18 @@ const CouchListings = () => {
   return (
     <main className="min-h-screen bg-background px-4 py-6">
       {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-sketch-dark text-center mb-2">
-          Available Couches
-        </h1>
-        <p className="text-muted-foreground text-center text-sm">
-          Find your perfect study spot
-        </p>
+      <header className="mb-8 flex justify-between items-center">
+        <div className="text-center flex-1">
+          <h1 className="text-2xl font-bold text-sketch-dark mb-2">
+            Available Couches
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Welcome back, {profile?.full_name || 'Student'}!
+          </p>
+        </div>
+        <Button onClick={signOut} variant="outline" size="sm">
+          Sign Out
+        </Button>
       </header>
 
       {/* Grid of couch listings */}

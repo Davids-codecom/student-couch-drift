@@ -8,24 +8,39 @@ import NotFound from "./pages/NotFound";
 import SplashScreen from "./components/SplashScreen";
 import CouchListings from "./components/CouchListings";
 import CouchDetail from "./components/CouchDetail";
+import Auth from "./pages/Auth";
+import LandingPage from "./pages/LandingPage";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<SplashScreen />} />
-          <Route path="/listings" element={<CouchListings />} />
-          <Route path="/couch/:id" element={<CouchDetail />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/listings" element={
+              <ProtectedRoute>
+                <CouchListings />
+              </ProtectedRoute>
+            } />
+            <Route path="/couch/:id" element={
+              <ProtectedRoute>
+                <CouchDetail />
+              </ProtectedRoute>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
