@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 
 // Temporary mock authentication for testing
 const Auth = () => {
@@ -17,6 +18,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refreshUser } = useAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +46,9 @@ const Auth = () => {
         };
         
         localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        // Refresh the auth context with new user data
+        refreshUser();
         
         toast({
           title: "Success!",
@@ -95,6 +100,9 @@ const Auth = () => {
         };
         
         localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        // Refresh the auth context with new user data
+        refreshUser();
         
         toast({
           title: "Success!",

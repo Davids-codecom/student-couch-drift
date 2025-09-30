@@ -16,6 +16,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signOut: async () => {},
+  refreshUser: () => {},
 });
 
 export const useAuth = () => {
@@ -63,12 +65,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   };
 
+  const refreshUser = () => {
+    try {
+      const userData = localStorage.getItem('currentUser');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        setUser(parsed);
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   const value = {
     user,
     session: user ? { user } : null,
     profile: user,
     loading,
     signOut,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
