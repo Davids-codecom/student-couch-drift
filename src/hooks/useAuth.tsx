@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
-type Profile = {
+export type Profile = {
   id: string;
   email: string;
   full_name: string | null;
-  user_role: 'host' | 'renter';
+  user_role: "host" | "renter";
   avatar_url: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -12,11 +14,11 @@ type Profile = {
 
 interface AuthContextType {
   user: Profile | null;
-  session: any;
+  session: Session | null;
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  refreshUser: () => void;
+  refreshUser: () => Promise<Profile | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,7 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signOut: async () => {},
-  refreshUser: () => {},
+  refreshUser: async () => null,
 });
 
 export const useAuth = () => {
@@ -37,50 +39,84 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<Profile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, user_role, avatar_url, created_at, updated_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching profile:", error.message);
+      setProfile(null);
+      return null;
+    }
+
+    if (data) {
+      const typedProfile = data as Profile;
+      setProfile(typedProfile);
+      return typedProfile;
+    }
+
+    setProfile(null);
+    return null;
+  };
+
+  const refreshUser = async () => {
+    const { data } = await supabase.auth.getSession();
+    const currentSession = data.session;
+    setSession(currentSession);
+
+    if (currentSession?.user?.id) {
+      const fetchedProfile = await fetchProfile(currentSession.user.id);
+      return fetchedProfile;
+    }
+
+    setProfile(null);
+    return null;
+  };
+
   useEffect(() => {
-    // Check localStorage for user data
-    const checkUser = () => {
-      try {
-        const userData = localStorage.getItem('currentUser');
-        if (userData) {
-          const parsed = JSON.parse(userData);
-          setUser(parsed);
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('currentUser');
-      } finally {
-        setLoading(false);
-      }
+    const initializeAuth = async () => {
+      await refreshUser();
+      setLoading(false);
     };
 
-    checkUser();
+    initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user?.id) {
+        fetchProfile(newSession.user.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
-    localStorage.removeItem('currentUser');
-    setUser(null);
-  };
-
-  const refreshUser = () => {
-    try {
-      const userData = localStorage.getItem('currentUser');
-      if (userData) {
-        const parsed = JSON.parse(userData);
-        setUser(parsed);
-      }
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Error signing out:", error.message);
     }
+    setSession(null);
+    setProfile(null);
   };
 
-  const value = {
-    user,
-    session: user ? { user } : null,
-    profile: user,
+  const value: AuthContextType = {
+    user: profile,
+    session,
+    profile,
     loading,
     signOut,
     refreshUser,
