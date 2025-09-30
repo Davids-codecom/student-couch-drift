@@ -9,7 +9,7 @@ const LandingPage = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate("/listings");
+      navigate("/listings", { replace: true });
     }
   }, [user, loading, navigate]);
 

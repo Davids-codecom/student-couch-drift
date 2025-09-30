@@ -19,12 +19,14 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const userData = localStorage.getItem('currentUser');
-    if (userData) {
-      navigate("/listings");
+    // Only check once on mount, not when loading state changes
+    if (!loading) {
+      const userData = localStorage.getItem('currentUser');
+      if (userData) {
+        navigate("/listings", { replace: true });
+      }
     }
-  }, [navigate]);
+  }, [navigate, loading]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +60,8 @@ const Auth = () => {
           description: "Account created successfully. You can now browse listings.",
         });
         
-        // Navigate to listings page
-        navigate("/listings");
+        // Navigate to listings page (replace to prevent back button issues)
+        navigate("/listings", { replace: true });
         
       } catch (error: any) {
         toast({
@@ -105,7 +107,7 @@ const Auth = () => {
           description: "Signed in successfully.",
         });
         
-        navigate("/listings");
+        navigate("/listings", { replace: true });
         
       } catch (error: any) {
         toast({
