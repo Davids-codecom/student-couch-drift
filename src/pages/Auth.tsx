@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,16 +17,18 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const hasCheckedAuth = useRef(false);
 
   useEffect(() => {
-    // Only check once on mount, not when loading state changes
-    if (!loading) {
+    // Only check once on mount using ref to prevent infinite loops
+    if (!hasCheckedAuth.current) {
+      hasCheckedAuth.current = true;
       const userData = localStorage.getItem('currentUser');
       if (userData) {
         navigate("/listings", { replace: true });
       }
     }
-  }, [navigate, loading]);
+  }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

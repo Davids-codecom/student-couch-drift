@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !hasRedirected.current) {
+      hasRedirected.current = true;
       navigate("/listings", { replace: true });
     }
   }, [user, loading, navigate]);
