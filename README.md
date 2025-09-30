@@ -71,3 +71,23 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Supabase database schema
+
+The app now persists student accounts and host onboarding data in Supabase. To provision the required tables and row-level
+security (RLS) policies, run the SQL script at [`supabase/schema.sql`](supabase/schema.sql) inside your Supabase project.
+
+You can apply the schema via the Supabase SQL editor or the CLI:
+
+```sh
+supabase db push --file supabase/schema.sql
+```
+
+The script creates two tables:
+
+- `profiles` – stores the authenticated student profile with their role (`host` or `renter`).
+- `host_listings` – stores host onboarding submissions, including address, property details, nightly price, check-in time,
+  and structured metadata for uploaded verification documents.
+
+Both tables have RLS policies so that students only read and modify their own records. Update the policies if you later add
+an admin workflow.

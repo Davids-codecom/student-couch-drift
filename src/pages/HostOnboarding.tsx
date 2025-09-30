@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const HostOnboarding = () => {
   const navigate = useNavigate();
@@ -80,35 +81,85 @@ const HostOnboarding = () => {
       return;
     }
     
+    if (!user?.id) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in again to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
-    
-    // Simulate upload delay
-    setTimeout(() => {
-      // Store listing data in localStorage (temporary until Supabase is fully integrated)
-      const listingData = {
-        userId: user?.id,
-        ...formData,
-        uploadedAt: new Date().toISOString(),
-        // In real implementation, these would be URLs to uploaded files
-        filesUploaded: {
-          couchPhotos: files.couchPhotos.length,
-          selfie: files.selfie.name,
-          idPassport: files.idPassport.name,
-          enrollmentDoc: files.enrollmentDoc.name,
-          studentCard: files.studentCard.name,
-        }
+
+    try {
+      const documentMetadata = {
+        couchPhotos: files.couchPhotos.map((file, index) => ({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          order: index,
+        })),
+        selfie: files.selfie
+          ? {
+              name: files.selfie.name,
+              size: files.selfie.size,
+              type: files.selfie.type,
+            }
+          : null,
+        idPassport: files.idPassport
+          ? {
+              name: files.idPassport.name,
+              size: files.idPassport.size,
+              type: files.idPassport.type,
+            }
+          : null,
+        enrollmentDoc: files.enrollmentDoc
+          ? {
+              name: files.enrollmentDoc.name,
+              size: files.enrollmentDoc.size,
+              type: files.enrollmentDoc.type,
+            }
+          : null,
+        studentCard: files.studentCard
+          ? {
+              name: files.studentCard.name,
+              size: files.studentCard.size,
+              type: files.studentCard.type,
+            }
+          : null,
       };
-      
-      localStorage.setItem(`listing_${user?.id}`, JSON.stringify(listingData));
-      
+
+      const { error } = await supabase.from("host_listings").insert({
+        user_id: user.id,
+        address: formData.address,
+        property_type: formData.propertyType,
+        price_per_night: Number(formData.pricePerNight),
+        check_in_time: formData.checkInTime,
+        document_metadata: documentMetadata,
+        status: "pending",
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Success!",
         description: "Your listing has been created successfully",
       });
-      
-      setLoading(false);
+
       navigate("/listings");
-    }, 1500);
+    } catch (error: any) {
+      console.error("Error saving host listing:", error);
+      toast({
+        title: "Submission failed",
+        description: error?.message || "We couldn't save your information. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

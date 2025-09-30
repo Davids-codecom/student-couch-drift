@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 // Temporary mock authentication for testing
 const Auth = () => {
@@ -32,46 +33,61 @@ const Auth = () => {
     }
 
     setLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      try {
-        // Store user data in localStorage for now
-        const userData = {
-          id: Date.now().toString(),
-          email,
-          full_name: fullName,
-          user_role: userRole,
-          created_at: new Date().toISOString()
-        };
-        
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        
-        // Refresh the auth context with new user data
-        refreshUser();
-        
-        toast({
-          title: "Success!",
-          description: "Account created successfully.",
-        });
-        
-        // Navigate based on user role
-        if (userRole === "host") {
-          navigate("/host-onboarding", { replace: true });
-        } else {
-          navigate("/listings", { replace: true });
-        }
-        
-      } catch (error: any) {
-        toast({
-          title: "Signup Error",
-          description: "Failed to create account. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            user_role: userRole,
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
       }
-    }, 1000);
+
+      const userId = data.user?.id;
+      if (userId) {
+        const { error: profileError } = await supabase.from("profiles").upsert(
+          {
+            id: userId,
+            email,
+            full_name: fullName,
+            user_role: userRole,
+          },
+          {
+            onConflict: "id",
+          }
+        );
+
+        if (profileError) {
+          throw profileError;
+        }
+      }
+
+      const profile = await refreshUser();
+
+      toast({
+        title: "Success!",
+        description: "Account created successfully.",
+      });
+
+      const destination = (profile?.user_role ?? userRole) === "host" ? "/host-onboarding" : "/listings";
+      navigate(destination, { replace: true });
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup Error",
+        description: error?.message || "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -86,41 +102,36 @@ const Auth = () => {
     }
 
     setLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      try {
-        // For demo purposes, accept any email/password combination
-        const userData = {
-          id: Date.now().toString(),
-          email,
-          full_name: email.split('@')[0], // Use email prefix as name
-          user_role: 'renter' as const,
-          created_at: new Date().toISOString()
-        };
-        
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        
-        // Refresh the auth context with new user data
-        refreshUser();
-        
-        toast({
-          title: "Success!",
-          description: "Signed in successfully.",
-        });
-        
-        navigate("/listings", { replace: true });
-        
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: "Failed to sign in. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
       }
-    }, 1000);
+
+      const profile = await refreshUser();
+
+      toast({
+        title: "Success!",
+        description: "Signed in successfully.",
+      });
+
+      const destination = profile?.user_role === "host" ? "/host-onboarding" : "/listings";
+      navigate(destination, { replace: true });
+    } catch (error: any) {
+      console.error("Sign-in error:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to sign in. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
