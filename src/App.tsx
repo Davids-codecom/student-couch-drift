@@ -10,6 +10,7 @@ import CouchListings from "./components/CouchListings";
 import CouchDetail from "./components/CouchDetail";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
+import HostOnboarding from "./pages/HostOnboarding";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -25,6 +26,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/host-onboarding" element={
+              <ProtectedRoute>
+                <HostOnboarding />
+              </ProtectedRoute>
+            } />
             <Route path="/listings" element={
               <ProtectedRoute>
                 <CouchListings />

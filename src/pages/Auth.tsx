@@ -47,11 +47,15 @@ const Auth = () => {
         
         toast({
           title: "Success!",
-          description: "Account created successfully. You can now browse listings.",
+          description: "Account created successfully.",
         });
         
-        // Navigate to listings page (replace to prevent back button issues)
-        navigate("/listings", { replace: true });
+        // Navigate based on user role
+        if (userRole === "host") {
+          navigate("/host-onboarding", { replace: true });
+        } else {
+          navigate("/listings", { replace: true });
+        }
         
       } catch (error: any) {
         toast({
