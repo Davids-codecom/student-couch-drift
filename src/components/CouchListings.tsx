@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,22 @@ interface CouchListing {
   description: string;
 }
 
-const mockListings: CouchListing[] = [
+type StoredListing = {
+  userId?: string;
+  address?: string;
+  propertyType?: "house" | "flat";
+  pricePerNight?: string;
+  checkInTime?: string;
+  uploadedAt?: string;
+  hostName?: string | null;
+};
+
+const propertyTypeImageMap: Record<string, string> = {
+  house: couch4,
+  flat: couch3,
+};
+
+const defaultListings: CouchListing[] = [
   {
     id: "1",
     image: couch1,
@@ -82,9 +98,108 @@ const mockListings: CouchListing[] = [
   }
 ];
 
+const sanitizePrice = (value?: string) => {
+  if (!value) return "$0";
+  const trimmed = value.trim();
+  if (!trimmed) return "$0";
+  return trimmed.startsWith("$") ? trimmed : `$${trimmed}`;
+};
+
+const createListingFromStorage = (
+  data: StoredListing,
+  storageKey: string,
+  index: number,
+): CouchListing => {
+  const propertyType = data.propertyType ?? "flat";
+  const image = propertyTypeImageMap[propertyType] ?? couch2;
+  const friendlyProperty = propertyType === "house" ? "House" : "Flat";
+  const hostFirstName = data.hostName?.split(" ")[0];
+  const title = hostFirstName
+    ? `${hostFirstName}'s ${friendlyProperty} Couch`
+    : `New ${friendlyProperty} Couch`;
+
+  const uploadedDate = data.uploadedAt ? new Date(data.uploadedAt) : null;
+  const formattedDate = uploadedDate && !isNaN(uploadedDate.getTime())
+    ? uploadedDate.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
+  return {
+    id: data.userId ? `local-${data.userId}` : `local-${storageKey}-${index}`,
+    image,
+    price: sanitizePrice(data.pricePerNight),
+    title,
+    host: data.hostName ?? "Community Host",
+    location: data.address ?? "Address shared after booking",
+    availableDates: data.checkInTime
+      ? `Check-in after ${data.checkInTime}`
+      : "Flexible availability",
+    description: formattedDate
+      ? `Listing added on ${formattedDate}.`
+      : "Recently added listing from our host community.",
+  };
+};
+
+const getLocalListings = (): CouchListing[] => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const storedListings: Array<{ data: StoredListing; key: string }> = [];
+
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (!key || !key.startsWith("listing_")) continue;
+
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as StoredListing;
+      storedListings.push({ data: parsed, key });
+    } catch (error) {
+      console.error("Failed to parse stored listing", error);
+    }
+  }
+
+  storedListings.sort((a, b) => {
+    const dateA = a.data.uploadedAt ? new Date(a.data.uploadedAt).getTime() : 0;
+    const dateB = b.data.uploadedAt ? new Date(b.data.uploadedAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  return storedListings.map(({ data, key }, index) =>
+    createListingFromStorage(data, key, index),
+  );
+};
+
+const buildListings = () => {
+  const local = getLocalListings();
+  return local.length ? [...local, ...defaultListings] : defaultListings;
+};
+
 const CouchListings = () => {
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
+  const [listings, setListings] = useState<CouchListing[]>(() => buildListings());
+
+  useEffect(() => {
+    const handleUpdate = (_event?: Event) => {
+      setListings(buildListings());
+    };
+
+    handleUpdate();
+
+    window.addEventListener("storage", handleUpdate);
+    window.addEventListener("listings-updated", handleUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleUpdate);
+      window.removeEventListener("listings-updated", handleUpdate);
+    };
+  }, []);
 
   const handleCouchClick = (couch: CouchListing) => {
     navigate(`/couch/${couch.id}`, { state: { couch } });
@@ -109,7 +224,7 @@ const CouchListings = () => {
 
       {/* Grid of couch listings */}
       <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-        {mockListings.map((couch) => (
+        {listings.map((couch) => (
           <div
             key={couch.id}
             onClick={() => handleCouchClick(couch)}

@@ -87,6 +87,7 @@ const HostOnboarding = () => {
       // Store listing data in localStorage (temporary until Supabase is fully integrated)
       const listingData = {
         userId: user?.id,
+        hostName: user?.full_name ?? null,
         ...formData,
         uploadedAt: new Date().toISOString(),
         // In real implementation, these would be URLs to uploaded files
@@ -96,10 +97,14 @@ const HostOnboarding = () => {
           idPassport: files.idPassport.name,
           enrollmentDoc: files.enrollmentDoc.name,
           studentCard: files.studentCard.name,
-        }
+        },
       };
-      
+
       localStorage.setItem(`listing_${user?.id}`, JSON.stringify(listingData));
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("listings-updated"));
+      }
       
       toast({
         title: "Success!",
