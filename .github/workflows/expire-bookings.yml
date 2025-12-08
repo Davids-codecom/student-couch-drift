@@ -1,0 +1,27 @@
+name: Expire unpaid bookings
+
+on:
+  schedule:
+    # Run every hour on the hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  invoke-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call expire-bookings Edge Function
+        env:
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE" ] || [ -z "$SUPABASE_PROJECT_URL" ]; then
+            echo "Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_PROJECT_URL repo secret" >&2
+            exit 1
+          fi
+          curl --fail --show-error --silent \
+            --request POST \
+            --url "$SUPABASE_PROJECT_URL/functions/v1/expire-bookings" \
+            --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE" \
+            --header "Content-Type: application/json" \
+            --data '{}'
