@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirecting…</title>
+    <meta http-equiv="refresh" content="0; url=/" />
+    <script>
+      // GitHub Pages SPA fallback:
+      // store the original path so the app can restore it after redirecting to /
+      sessionStorage.setItem("spa-redirect", window.location.pathname + window.location.search + window.location.hash);
+      window.location.replace("/");
+    </script>
+  </head>
+  <body>
+    <p>Redirecting…</p>
+  </body>
+</html>
