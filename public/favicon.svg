@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Couch Surfing icon</title>
+  <defs>
+    <linearGradient id="couchGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5B8DEF" />
+      <stop offset="100%" stop-color="#3EC1A5" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#couchGradient)" />
+  <path d="M20 34c0-6 4-10 12-10s12 4 12 10v6h4a2 2 0 0 1 2 2v4H14v-4a2 2 0 0 1 2-2h4v-6Z" fill="#FFFFFF" opacity="0.9" />
+  <rect x="18" y="38" width="28" height="10" rx="4" fill="#ffffff" />
+  <path d="M22 48v4m20-4v4" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round" />
+</svg>
