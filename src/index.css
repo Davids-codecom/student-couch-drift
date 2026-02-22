@@ -2,52 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Couch Surfing - Sketch-like design system in blue and white */
+/* Couch Surfing - Swiss-inspired light slate design system */
 
 @layer base {
   :root {
-    /* Base colors - Clean white background with sketch-blue accents */
-    --background: 0 0% 100%;
-    --foreground: 210 100% 20%;
+    /* Base colors - soft neutral/slate palette */
+    --background: 210 30% 97%;
+    --foreground: 220 25% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 100% 25%;
+    --card-foreground: 220 25% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 100% 20%;
+    --popover-foreground: 220 25% 18%;
 
-    /* Primary - Sketch blue theme */
-    --primary: 210 100% 50%;
+    /* Primary - calm Swiss-tech slate-blue */
+    --primary: 216 29% 32%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Light blue for subtle elements */
-    --secondary: 210 40% 95%;
-    --secondary-foreground: 210 100% 30%;
+    /* Secondary - subtle elevated surfaces */
+    --secondary: 210 25% 94%;
+    --secondary-foreground: 220 18% 30%;
 
-    /* Muted - Very light blue for backgrounds */
-    --muted: 210 25% 97%;
-    --muted-foreground: 210 50% 45%;
+    /* Muted text/surfaces */
+    --muted: 210 22% 95%;
+    --muted-foreground: 215 15% 43%;
 
-    /* Accent - Medium blue for highlights */
-    --accent: 210 80% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 20% 90%;
+    --accent-foreground: 220 25% 20%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Sketch-style borders */
-    --border: 210 30% 85%;
-    --input: 210 20% 90%;
-    --ring: 210 100% 50%;
+    --border: 214 23% 86%;
+    --input: 214 24% 89%;
+    --ring: 215 33% 45%;
 
     --radius: 0.75rem;
 
-    /* Custom sketch variables */
-    --sketch-blue: 210 100% 50%;
-    --sketch-light: 210 40% 95%;
-    --sketch-medium: 210 80% 60%;
-    --sketch-dark: 210 100% 25%;
-    --offer-card-bg: 200 60% 80%;
+    /* Legacy custom vars used around the app */
+    --sketch-blue: 215 41% 45%;
+    --sketch-light: 210 30% 95%;
+    --sketch-medium: 214 35% 64%;
+    --sketch-dark: 220 24% 22%;
+    --offer-card-bg: 210 30% 91%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -131,5 +129,9 @@
   
   .border-sketch {
     border-color: hsl(var(--border));
+  }
+
+  .dreamy-bg {
+    @apply bg-gradient-to-br from-[#f6f8fb] via-[#edf2f7] to-[#f8fafc];
   }
 }

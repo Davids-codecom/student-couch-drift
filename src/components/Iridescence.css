@@ -1,0 +1,18 @@
+.iridescence-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(121, 212, 255, 0.6), transparent 55%),
+    radial-gradient(circle at 85% 20%, rgba(255, 200, 234, 0.55), transparent 60%),
+    radial-gradient(circle at 50% 85%, rgba(186, 255, 210, 0.45), transparent 63%),
+    linear-gradient(135deg, #0f172a 0%, #312e81 45%, #9d174d 100%);
+}
+
+.iridescence-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}

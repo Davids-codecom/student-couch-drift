@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <title>Couch Surfing - Student Housing</title>
     <meta name="description" content="Student to student couch sharing platform. Find comfortable couches for studying and overnight stays near campus." />
     <meta name="author" content="Couch Surfing App" />
@@ -15,6 +16,15 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <script>
+      (function () {
+        const redirect = sessionStorage.getItem("spa-redirect");
+        if (redirect) {
+          sessionStorage.removeItem("spa-redirect");
+          window.history.replaceState(null, "", redirect);
+        }
+      })();
+    </script>
   </head>
 
   <body>
