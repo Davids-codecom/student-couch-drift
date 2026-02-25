@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -18,10 +18,25 @@ const HERO_VIDEO_SRC =
   "https://videos.pexels.com/video-files/5152196/5152196-hd_1920_1080_25fps.mp4";
 const HERO_POSTER_URL =
   "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?auto=format&fit=crop&w=2200&q=85";
-const SOLUTION_MONTAGE_VIDEO_SRC =
-  "https://videos.pexels.com/video-files/3209298/3209298-hd_1920_1080_25fps.mp4";
 const SOLUTION_MONTAGE_POSTER_URL =
-  "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=2200&q=85";
+  "/images/platform-montage-poster.jpg";
+const SOLUTION_FLOW_SLIDES = [
+  {
+    title: "Book a place",
+    src: "/images/about-book-a-place.png",
+    alt: "Book a place screen",
+  },
+  {
+    title: "Manage reservations",
+    src: "/images/about-manage-reservations.png",
+    alt: "Manage reservations screen",
+  },
+  {
+    title: "Map view",
+    src: "/images/about-map-view.png",
+    alt: "Map view screen",
+  },
+] as const;
 const VISION_VIDEO_SRC =
   "https://videos.pexels.com/video-files/3184428/3184428-hd_1920_1080_24fps.mp4";
 const VISION_POSTER_URL =
@@ -153,8 +168,11 @@ const LandingPage = () => {
   const { user } = useAuth();
   const [scrollY, setScrollY] = useState(0);
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
-  const solutionVideoRef = useRef<HTMLVideoElement | null>(null);
   const visionVideoRef = useRef<HTMLVideoElement | null>(null);
+  const solutionCarouselRef = useRef<HTMLDivElement | null>(null);
+  const [solutionSlideIndex, setSolutionSlideIndex] = useState(0);
+  const [carouselInteractionTick, setCarouselInteractionTick] = useState(0);
+  const [isCarouselInteracting, setIsCarouselInteracting] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -167,13 +185,41 @@ const LandingPage = () => {
     if (heroVideoRef.current) {
       heroVideoRef.current.playbackRate = 0.78;
     }
-    if (solutionVideoRef.current) {
-      solutionVideoRef.current.playbackRate = 1;
-    }
     if (visionVideoRef.current) {
       visionVideoRef.current.playbackRate = 0.85;
     }
   }, []);
+
+  const scrollToSolutionSlide = useCallback(
+    (index: number, behavior: ScrollBehavior = "smooth") => {
+      const container = solutionCarouselRef.current;
+      if (!container) return;
+      const total = SOLUTION_FLOW_SLIDES.length;
+      const normalized = ((index % total) + total) % total;
+      container.scrollTo({
+        left: normalized * container.clientWidth,
+        behavior,
+      });
+      setSolutionSlideIndex(normalized);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (isCarouselInteracting) return;
+    const timer = window.setTimeout(() => {
+      scrollToSolutionSlide(solutionSlideIndex + 1);
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [carouselInteractionTick, isCarouselInteracting, scrollToSolutionSlide, solutionSlideIndex]);
+
+  useEffect(() => {
+    const onResize = () => {
+      scrollToSolutionSlide(solutionSlideIndex, "auto");
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [scrollToSolutionSlide, solutionSlideIndex]);
 
   const heroOffset = useMemo(() => Math.min(scrollY * 0.08, 42), [scrollY]);
   const visionOffset = useMemo(() => Math.min(scrollY * 0.05, 26), [scrollY]);
@@ -306,34 +352,54 @@ const LandingPage = () => {
               ))}
             </div>
 
-            <Reveal delayMs={140} className="mt-12">
+            <Reveal delayMs={140} className="mx-auto mt-12 w-full max-w-[768px]">
               <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-slate-900 shadow-lg">
-                <div className="flex items-center justify-between border-b border-slate-700/60 px-5 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">
-                    Platform Montage
-                  </p>
-                  <p className="text-xs text-slate-400">Live product flow</p>
-                </div>
-                <div className="relative aspect-[16/9]">
-                  <video
-                    ref={solutionVideoRef}
-                    className="hidden h-full w-full object-cover md:block"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="metadata"
-                    poster={SOLUTION_MONTAGE_POSTER_URL}
+                <div className="relative aspect-[3/2]">
+                  <div
+                    ref={solutionCarouselRef}
+                    className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden"
+                    style={{ scrollbarWidth: "none" }}
+                    onScroll={(event) => {
+                      const target = event.currentTarget;
+                      if (!target.clientWidth) return;
+                      const nextIndex = Math.round(target.scrollLeft / target.clientWidth);
+                      setSolutionSlideIndex(Math.min(Math.max(nextIndex, 0), SOLUTION_FLOW_SLIDES.length - 1));
+                    }}
+                    onPointerDown={() => {
+                      setIsCarouselInteracting(true);
+                      setCarouselInteractionTick((value) => value + 1);
+                    }}
+                    onPointerUp={() => {
+                      setIsCarouselInteracting(false);
+                      setCarouselInteractionTick((value) => value + 1);
+                    }}
+                    onPointerCancel={() => {
+                      setIsCarouselInteracting(false);
+                      setCarouselInteractionTick((value) => value + 1);
+                    }}
+                    onPointerLeave={() => {
+                      setIsCarouselInteracting(false);
+                    }}
                   >
-                    <source src={SOLUTION_MONTAGE_VIDEO_SRC} type="video/mp4" />
-                  </video>
-                  <img
-                    src={SOLUTION_MONTAGE_POSTER_URL}
-                    alt="Product montage preview"
-                    className="h-full w-full object-cover md:hidden"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-slate-900/20" />
+                    {SOLUTION_FLOW_SLIDES.map((slide) => (
+                      <div
+                        key={slide.title}
+                        className="relative flex h-full w-full shrink-0 snap-start items-center justify-center bg-[#edf2ff]"
+                      >
+                        <img
+                          src={slide.src}
+                          alt={slide.alt}
+                          className="h-full w-full object-contain"
+                          loading="lazy"
+                          onError={(event) => {
+                            if (event.currentTarget.dataset.fallbackApplied === "true") return;
+                            event.currentTarget.dataset.fallbackApplied = "true";
+                            event.currentTarget.src = SOLUTION_MONTAGE_POSTER_URL;
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </Reveal>
