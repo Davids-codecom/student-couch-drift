@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardTitle } from "@/components/ui/card";
@@ -40,36 +40,17 @@ const floatingOrbs = [
   { top: "75%", left: "20%", size: 180, opacity: 0.3, delay: "-5s" },
 ] as const;
 
-const EDU_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.edu$/i;
-const OWNER_BYPASS_EMAIL = "davids.akis@unil.ch";
-const OWNER_FIXED_PASSWORD = "12345678";
-
-type OwnerSignupAction = "confirm";
-
-interface OwnerSignupRequest {
-  action: OwnerSignupAction;
-  email: string;
-  userId: string;
-}
-
-interface OwnerSignupResponse {
-  ok: boolean;
-  error?: string;
-}
-
-const invokeOwnerSignup = async (payload: OwnerSignupRequest) => {
-  const { data, error } = await supabase.functions.invoke<OwnerSignupResponse>("owner-signup", {
-    body: payload,
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data?.ok) {
-    throw new Error(data?.error ?? "Owner signup validation failed.");
-  }
-};
+const UNIVERSITY_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+const APPROVED_UNIVERSITY_DOMAINS = new Set([
+  "edu",
+  "unil.ch",
+  "unige.ch",
+  "hsg.ch",
+  "unibe.ch",
+  "ethz.ch",
+  "epfl.ch",
+  "uzh.ch",
+]);
 
 const detectRecoveryRequest = () => {
   if (typeof window === "undefined") {
@@ -102,8 +83,57 @@ const clearRecoveryUrlState = () => {
   window.history.replaceState({}, document.title, `${nextUrl.pathname}${nextUrl.search}`);
 };
 
+const detectRequestedAuthMode = (): "signin" | "signup" | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const mode = new URLSearchParams(window.location.search).get("mode");
+  if (mode === "signup" || mode === "signin") {
+    return mode;
+  }
+  return null;
+};
+
+const isUniversityEmail = (email: string) => {
+  if (!UNIVERSITY_EMAIL_REGEX.test(email)) {
+    return false;
+  }
+  const domain = email.split("@")[1]?.toLowerCase() ?? "";
+  return [...APPROVED_UNIVERSITY_DOMAINS].some((suffix) => domain === suffix || domain.endsWith(`.${suffix}`));
+};
+
+const deriveNameFromUniversityEmail = (email: string) => {
+  const localPart = email.split("@")[0] ?? "";
+  const rawSegments = localPart
+    .replace(/[^a-zA-Z.\-_]/g, " ")
+    .split(/[.\-_ ]+/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  const cleanedSegments = rawSegments.length > 0 ? rawSegments : ["Student"];
+  const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+  const firstName = toTitleCase(cleanedSegments[0]);
+  const lastName = cleanedSegments[1] ? toTitleCase(cleanedSegments[1]) : "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  return { firstName, lastName, fullName: fullName || "Student" };
+};
+
+const getAuthEmailRedirect = () => {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const host = window.location.hostname.toLowerCase();
+  if (host === "localhost" || host === "127.0.0.1") {
+    return undefined;
+  }
+
+  return `${window.location.origin}/auth`;
+};
+
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user, loading, signOut } = useSession();
   const { refreshUser } = useAuth();
@@ -111,14 +141,15 @@ const Auth = () => {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [userRole, setUserRole] = useState<"renter" | "host">("renter");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
   const [updatingPassword, setUpdatingPassword] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -161,6 +192,47 @@ const Auth = () => {
       setSendingReset(false);
     }
   };
+
+  const handleResendVerification = useCallback(async () => {
+    setStatusMessage(null);
+    setErrorMessage(null);
+
+    const targetEmail = (pendingVerificationEmail || email).trim().toLowerCase();
+    if (!targetEmail) {
+      setErrorMessage("Enter your university email, then resend verification.");
+      return;
+    }
+
+    if (!isUniversityEmail(targetEmail)) {
+      setErrorMessage("Use your university email to resend verification.");
+      return;
+    }
+
+    setResendingVerification(true);
+    try {
+      const redirectTo = getAuthEmailRedirect();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: targetEmail,
+        options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
+      });
+      if (error) {
+        throw error;
+      }
+
+      setPendingVerificationEmail(targetEmail);
+      setStatusMessage(`Verification email resent to ${targetEmail}.`);
+      toast({
+        title: "Verification resent",
+        description: "Check inbox and spam folders.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to resend verification email.";
+      setErrorMessage(message);
+    } finally {
+      setResendingVerification(false);
+    }
+  }, [email, pendingVerificationEmail, toast]);
 
   const handleUpdatePassword = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -209,12 +281,10 @@ const Auth = () => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const typedPassword = password.trim();
-    const isOwnerBypass = normalizedEmail === OWNER_BYPASS_EMAIL;
-    const effectivePassword = isOwnerBypass ? OWNER_FIXED_PASSWORD : typedPassword;
 
     try {
       if (mode === "signup") {
-        if (!isOwnerBypass && effectivePassword.length < 6) {
+        if (typedPassword.length < 6) {
           setErrorMessage("Password must be at least 6 characters long.");
           return;
         }
@@ -224,28 +294,33 @@ const Auth = () => {
           return;
         }
 
-        if (!isOwnerBypass && !EDU_EMAIL_REGEX.test(normalizedEmail)) {
-          setErrorMessage("Use a valid .edu email to create a student account.");
+        if (!isUniversityEmail(normalizedEmail)) {
+          setErrorMessage("Use your university email to create an account.");
           return;
         }
 
+        const derivedName = deriveNameFromUniversityEmail(normalizedEmail);
+
         const signUpOptions: {
-          data: { full_name: string; user_role: string };
+          data: { full_name: string; first_name: string; last_name: string | null; user_role: string };
           emailRedirectTo?: string;
         } = {
           data: {
-            full_name: fullName.trim(),
+            full_name: derivedName.fullName,
+            first_name: derivedName.firstName,
+            last_name: derivedName.lastName || null,
             user_role: userRole,
           },
         };
 
-        if (typeof window !== "undefined") {
-          signUpOptions.emailRedirectTo = `${window.location.origin}/auth`;
+        const redirectTo = getAuthEmailRedirect();
+        if (redirectTo) {
+          signUpOptions.emailRedirectTo = redirectTo;
         }
 
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
-          password: effectivePassword,
+          password: typedPassword,
           options: signUpOptions,
         });
 
@@ -258,7 +333,7 @@ const Auth = () => {
           await upsertUserProfile({
             id: newUser.id,
             email: newUser.email ?? normalizedEmail,
-            full_name: fullName.trim() || null,
+            full_name: derivedName.fullName,
             user_role: userRole,
             avatar_url: null,
             bio: null,
@@ -268,49 +343,32 @@ const Auth = () => {
             program_year: null,
             program_type: null,
           });
-
-          if (isOwnerBypass) {
-            await invokeOwnerSignup({
-              action: "confirm",
-              email: normalizedEmail,
-              userId: newUser.id,
-            });
-
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-              email: normalizedEmail,
-              password: effectivePassword,
-            });
-            if (signInError) {
-              throw signInError;
-            }
-
-            await refreshUser();
-            setStatusMessage("Owner account created and signed in.");
-            toast({
-              title: "Owner account ready",
-              description: "Email verification was skipped for the approved owner email.",
-            });
-            navigate("/listings", { replace: true });
-            return;
-          }
         }
 
         await refreshUser();
-        setStatusMessage("Check your inbox and verify your .edu email within 24 hours to keep your account.");
+        setMode("signin");
+        setPassword("");
+        setPendingVerificationEmail(normalizedEmail);
+        setStatusMessage("Check your inbox, verify your university email, then sign in.");
         toast({
-          title: "Verify your .edu email",
-          description: "A confirmation email is on its way. Verify within 24 hours to keep your account active.",
+          title: "Verify your university email",
+          description: "We sent a confirmation link. If it does not arrive, use Resend verification.",
         });
-        navigate("/listings", { replace: true });
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
-        password: effectivePassword,
+        password: typedPassword,
       });
       if (error) {
         throw error;
+      }
+
+      if (!data.user?.email_confirmed_at) {
+        await supabase.auth.signOut();
+        setErrorMessage("Verify your university email before signing in.");
+        return;
       }
 
       await refreshUser();
@@ -319,6 +377,15 @@ const Auth = () => {
       navigate("/listings", { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Authentication failed.";
+      const normalizedMessage = message.toLowerCase();
+      if (normalizedMessage.includes("email not confirmed")) {
+        setErrorMessage("Verify your university email before signing in.");
+        return;
+      }
+      if (normalizedMessage.includes("database error saving new user")) {
+        setErrorMessage("Account setup is blocked by legacy data for this email. Contact support to clear it.");
+        return;
+      }
       setErrorMessage(message);
     } finally {
       setSubmitting(false);
@@ -332,10 +399,17 @@ const Auth = () => {
   }, [isRecoveryMode, loading, user, navigate]);
 
   useEffect(() => {
-    if (detectRecoveryRequest()) {
+    const requestedMode = detectRequestedAuthMode();
+    const recovery = detectRecoveryRequest();
+
+    if (recovery) {
       setIsRecoveryMode(true);
       setMode("signin");
       setStatusMessage("Create your new password.");
+      setErrorMessage(null);
+    } else if (requestedMode) {
+      setMode(requestedMode);
+      setStatusMessage(null);
       setErrorMessage(null);
     }
 
@@ -351,7 +425,7 @@ const Auth = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [location.search]);
 
   if (loading) {
     return (
@@ -425,7 +499,7 @@ const Auth = () => {
                 <CardDescription className="mt-1 text-sm">
                   {mode === "signin"
                     ? "Enter your credentials to pick up where you left off."
-                    : "Create your account with your .edu email and verify it from your inbox."}
+                    : "Sign up with your university email. We verify the email and auto-fill your name from it."}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -524,7 +598,7 @@ const Auth = () => {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder={mode === "signup" ? "you@school.edu" : "you@example.com"}
+                    placeholder={mode === "signup" ? "you@university.edu" : "you@example.com"}
                     required
                     className="h-11 rounded-2xl border-slate-200 bg-white/80"
                   />
@@ -555,18 +629,24 @@ const Auth = () => {
                   </div>
                 )}
 
+                {mode === "signin" && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendingVerification || submitting}
+                      className="text-xs font-semibold text-slate-600 underline underline-offset-4 transition hover:text-slate-900 disabled:opacity-60"
+                    >
+                      {resendingVerification ? "Resending verification..." : "Resend verification email"}
+                    </button>
+                  </div>
+                )}
+
                 {mode === "signup" && (
                   <div className="space-y-4 rounded-2xl border border-slate-100 bg-blue-50/40 p-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full name</Label>
-                      <Input
-                        id="fullName"
-                        value={fullName}
-                        onChange={(event) => setFullName(event.target.value)}
-                        placeholder="Jane Doe"
-                        className="h-11 rounded-2xl border-slate-200 bg-white"
-                      />
-                    </div>
+                    <p className="text-sm text-slate-600">
+                      Use your university email. First and last name are generated from the email address.
+                    </p>
 
                     <div className="space-y-2">
                       <Label>User role</Label>

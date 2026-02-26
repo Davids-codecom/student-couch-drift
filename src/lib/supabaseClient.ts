@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClientOptions } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type SupabaseClientOptions } from "@supabase/supabase-js";
 
 const url = import.meta.env.VITE_SUPABASE_URL
   ?? (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_SUPABASE_URL : undefined);
@@ -25,12 +25,22 @@ const resolveBrowserStorage = (): SupabaseClientOptions["auth"]["storage"] => {
   }
 };
 
-export const supabase = createClient(url, anon, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storageKey: "couchshare.auth",
-    storage: resolveBrowserStorage(),
-  },
-});
+const createSupabase = (): SupabaseClient =>
+  createClient(url, anon, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: "couchshare.auth",
+      storage: resolveBrowserStorage(),
+    },
+  });
+
+type GlobalSupabase = typeof globalThis & { __couchshareSupabase?: SupabaseClient };
+const globalScope = globalThis as GlobalSupabase;
+
+export const supabase = globalScope.__couchshareSupabase ?? createSupabase();
+
+if (typeof window !== "undefined") {
+  globalScope.__couchshareSupabase = supabase;
+}

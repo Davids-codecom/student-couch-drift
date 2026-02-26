@@ -12,6 +12,8 @@ import {
   Workflow,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/hooks/useAuth";
 
 const HERO_VIDEO_SRC =
@@ -41,6 +43,10 @@ const VISION_VIDEO_SRC =
   "https://videos.pexels.com/video-files/3184428/3184428-hd_1920_1080_24fps.mp4";
 const VISION_POSTER_URL =
   "https://images.unsplash.com/photo-1470246973918-29a93221c455?auto=format&fit=crop&w=2200&q=85";
+const CLOSED_ECOSYSTEM_OPEN_NETWORK_IMAGE =
+  "/closed_ecosystem_open_network.png?v=2";
+const AVERAGE_NIGHTLY_PRICE_CHF = 36;
+const DEFAULT_NIGHTS = 7;
 
 const pageMotion = `
   @keyframes aboutFadeUp {
@@ -48,22 +54,10 @@ const pageMotion = `
     to { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes aboutPulse {
-    0% { transform: scale(0.95); opacity: 0.4; }
-    50% { transform: scale(1); opacity: 0.9; }
-    100% { transform: scale(0.95); opacity: 0.4; }
-  }
-
   @keyframes aboutMockupFloat {
     0% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
     100% { transform: translateY(0); }
-  }
-
-  @keyframes aboutLineFlow {
-    0% { transform: translateX(-8%); opacity: 0.45; }
-    50% { transform: translateX(8%); opacity: 0.8; }
-    100% { transform: translateX(-8%); opacity: 0.45; }
   }
 `;
 
@@ -167,6 +161,8 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [scrollY, setScrollY] = useState(0);
+  const [isEarningsDialogOpen, setIsEarningsDialogOpen] = useState(false);
+  const [estimatedNights, setEstimatedNights] = useState(DEFAULT_NIGHTS);
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
   const visionVideoRef = useRef<HTMLVideoElement | null>(null);
   const solutionCarouselRef = useRef<HTMLDivElement | null>(null);
@@ -223,13 +219,30 @@ const LandingPage = () => {
 
   const heroOffset = useMemo(() => Math.min(scrollY * 0.08, 42), [scrollY]);
   const visionOffset = useMemo(() => Math.min(scrollY * 0.05, 26), [scrollY]);
+  const estimatedEarnings = useMemo(
+    () => estimatedNights * AVERAGE_NIGHTLY_PRICE_CHF,
+    [estimatedNights],
+  );
+
+  const openCouchShareFlow = useCallback(() => {
+    if (user) {
+      navigate("/listings");
+      return;
+    }
+    setIsEarningsDialogOpen(true);
+  }, [navigate, user]);
+
+  const continueToSignUp = useCallback(() => {
+    setIsEarningsDialogOpen(false);
+    navigate("/auth?mode=signup");
+  }, [navigate]);
 
   return (
     <div className="bg-[#f6f8fb] text-slate-900">
       <style>{pageMotion}</style>
 
       <main>
-        <section className="relative min-h-[88vh] overflow-hidden">
+        <section className="relative min-h-[82vh] overflow-hidden">
           <div className="absolute inset-0">
             <video
               ref={heroVideoRef}
@@ -253,97 +266,93 @@ const LandingPage = () => {
           </div>
 
           <div
-            className="relative mx-auto flex min-h-[88vh] w-full max-w-6xl items-center px-6 py-20 sm:px-8"
+            className="relative mx-auto flex min-h-[82vh] w-full max-w-6xl items-center px-6 py-16 sm:px-8 sm:py-20"
             style={{ transform: `translateY(${heroOffset}px)` }}
           >
-            <div className="max-w-3xl">
+            <div className="max-w-[68ch]">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">
                 Lausanne · Switzerland
               </p>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight text-white sm:text-6xl">
-                Reinventing Student Housing
+              <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Student Housing That Actually Works
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-200 sm:text-xl">
-                Built by students. Designed for universities. Made for real life.
+              <p className="mt-5 max-w-[52ch] text-base leading-relaxed text-slate-200 sm:text-lg">
+                A trusted student-to-student network for short stays near campus.
               </p>
-              <div className="mt-10 flex flex-wrap gap-3">
+              <div className="mt-7 flex flex-wrap gap-3.5">
                 <Button
-                  className="rounded-full bg-white px-7 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+                  className="min-w-[220px] justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100 sm:px-7 sm:py-3.5 sm:text-base"
+                  onClick={openCouchShareFlow}
+                >
+                  Couch-share your place <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="min-w-[220px] justify-center rounded-full border-slate-200/70 bg-transparent px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 sm:px-7 sm:py-3.5 sm:text-base"
                   onClick={() => {
                     window.location.href = "mailto:partnerships@couch-share.com?subject=University%20Partnership";
                   }}
                 >
-                  Partner With Us
-                </Button>
-                <Button
-                  variant="outline"
-                  className="rounded-full border-slate-200/70 bg-transparent px-7 text-sm font-semibold text-white hover:bg-white/10"
-                  onClick={() => navigate(user ? "/listings" : "/auth")}
-                >
-                  Join the Network <ArrowRight className="ml-2 h-4 w-4" />
+                  Partner with Couch-Share
                 </Button>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-[#f7f9fc] py-20 sm:py-24">
-          <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 sm:px-8 lg:grid-cols-[1.15fr_1fr]">
-            <Reveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">The Problem</p>
+        <section className="bg-[#f7f9fc] py-14 sm:py-16">
+          <div className="mx-auto grid w-full max-w-6xl gap-6 px-6 sm:gap-8 sm:px-8 lg:items-center lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <Reveal className="max-w-[36ch]">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">The Challenge</p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                A Structural Housing Crisis
+                Housing Demand Outruns Supply
               </h2>
-              <div className="mt-6 space-y-4 text-base leading-relaxed text-slate-700">
-                <p>Universities continue to attract and admit talented students while housing remains structurally limited.</p>
-                <p>International students are affected first, often arriving without local networks or immediate housing options.</p>
-                <p>New construction helps, but development cycles take years. Housing pressure is immediate and repeated every intake season.</p>
-                <p>When housing uncertainty becomes chronic, academic outcomes and retention are directly impacted.</p>
-              </div>
             </Reveal>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <CounterCard value={41} suffix="%" label="Students in high-demand intake periods face housing pressure." />
-              <CounterCard value={6} suffix="w" label="Typical search period for newly arrived students before stable placement." />
-              <CounterCard value={3} prefix="+" suffix=" years" label="Time needed for most housing projects to go live." />
-              <CounterCard value={24} suffix="/7" label="Support expectation students have when placement issues appear." />
+            <div className="grid gap-4 sm:grid-cols-2 lg:gap-5">
+              <CounterCard value={41} suffix="%" label="Students facing housing pressure in peak intake periods." />
+              <CounterCard value={6} suffix="w" label="Average search time before stable placement." />
+              <CounterCard value={3} prefix="+" suffix=" years" label="Typical lead time for new housing delivery." />
+              <CounterCard value={24} suffix="/7" label="Support availability students expect during issues." />
             </div>
           </div>
         </section>
 
-        <section className="bg-white py-20 sm:py-24">
-          <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
-            <Reveal className="mx-auto max-w-3xl text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">The Solution</p>
+        <section className="bg-white py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-5xl px-6 sm:px-8">
+            <Reveal className="mx-auto max-w-[70ch] text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">How It Works</p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                Unlocking Existing Housing Supply
+                Unlock Spare Capacity, Fast
               </h2>
               <p className="mt-6 text-base leading-relaxed text-slate-700">
-                We activate unused housing capacity by helping verified students share couches and spare rooms inside their university ecosystem. The model is flexible, secure by design, and asset-light, making it faster to deploy than traditional housing expansion.
+                Verified students share <span className="font-semibold text-slate-900">couches</span> and{" "}
+                <span className="font-semibold text-slate-900">spare rooms</span> within their university network, making
+                short-term housing available much faster.
               </p>
             </Reveal>
 
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
               {[
                 {
                   icon: GraduationCap,
-                  title: "Student Exclusive",
-                  copy: "Each university has its own closed ecosystem, visible only to verified students from that institution.",
+                  title: "Campus-Only Network",
+                  copy: "Each university runs a closed, student-verified ecosystem.",
                 },
                 {
                   icon: ShieldCheck,
-                  title: "Verified & Secure",
-                  copy: "Access control and structured accountability designed for trusted exchanges.",
+                  title: "Verified Exchanges",
+                  copy: "University email access, clear rules, and accountable behavior.",
                 },
                 {
                   icon: Wallet,
-                  title: "Affordable & Flexible",
-                  copy: "Pricing and stay flexibility aligned with real student budgets and academic timelines.",
+                  title: "Student-Friendly Pricing",
+                  copy: "Flexible stay lengths and rates aligned with student budgets.",
                 },
               ].map((item, index) => (
                 <Reveal
                   key={item.title}
                   delayMs={index * 90}
-                  className="rounded-3xl border border-slate-200 bg-[#f9fbfe] p-7 shadow-sm"
+                  className="rounded-3xl border border-slate-200 bg-[#f9fbfe] p-6 shadow-sm"
                 >
                   <item.icon className="h-7 w-7 text-slate-700" />
                   <h3 className="mt-5 text-xl font-semibold text-slate-900">{item.title}</h3>
@@ -406,30 +415,33 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section className="bg-slate-900 py-20 text-slate-100 sm:py-24">
-          <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 sm:px-8 lg:grid-cols-[1fr_1fr]">
-            <Reveal>
+        <section className="bg-slate-900 py-16 text-slate-100 sm:py-20">
+          <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 sm:px-8 lg:grid-cols-[1.25fr_1fr]">
+            <Reveal className="max-w-[72ch]">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Trust & Safety</p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Designed for Trust, Not Chance
+                Safety by Design
               </h2>
+              <p className="mt-5 max-w-[70ch] text-sm leading-relaxed text-slate-300 sm:text-base">
+                Safety is built into access, conduct, reputation, and support.
+              </p>
               <div className="mt-7 space-y-4">
                 {[
                   {
                     icon: CheckCircle2,
-                    text: "Verified university-email access to preserve a student-only network.",
+                    text: "Student-only access through university identity checks.",
                   },
                   {
                     icon: Scale,
-                    text: "Clear code of conduct and transparent accountability expectations.",
+                    text: "Shared conduct standards for hosts and renters.",
                   },
                   {
                     icon: Star,
-                    text: "Rating and reputation signals that improve decision quality over time.",
+                    text: "Transparent reviews and stay history after each booking.",
                   },
                   {
                     icon: Workflow,
-                    text: "Structured mediation framework for issue handling and resolution.",
+                    text: "Escalation and mediation when conflicts arise.",
                   },
                 ].map((point) => (
                   <div key={point.text} className="flex items-start gap-3 rounded-2xl border border-slate-700/60 bg-slate-800/60 p-4">
@@ -449,16 +461,16 @@ const LandingPage = () => {
                   <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Safety Snapshot</p>
                   <div className="mt-4 space-y-3">
                     <div className="flex items-center justify-between rounded-xl bg-slate-800 p-3 text-sm">
-                      <span>University email verified</span>
-                      <span className="font-semibold text-emerald-300">Confirmed</span>
+                      <span>University Email</span>
+                      <span className="font-semibold text-emerald-300">Verified</span>
                     </div>
                     <div className="flex items-center justify-between rounded-xl bg-slate-800 p-3 text-sm">
-                      <span>Community reputation</span>
+                      <span>Reputation Score</span>
                       <span className="font-semibold text-slate-100">4.8 / 5.0</span>
                     </div>
                     <div className="flex items-center justify-between rounded-xl bg-slate-800 p-3 text-sm">
-                      <span>Support protocol status</span>
-                      <span className="font-semibold text-blue-200">Structured</span>
+                      <span>Support Protocol</span>
+                      <span className="font-semibold text-blue-200">Active</span>
                     </div>
                   </div>
                 </div>
@@ -467,57 +479,32 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section className="bg-[#f5f8fc] py-20 sm:py-24">
+        <section className="bg-[#f5f8fc] py-12 sm:py-14">
           <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
-            <Reveal className="mx-auto max-w-4xl text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">University Integration</p>
-              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                Housing Infrastructure for Modern Universities
-              </h2>
-              <p className="mt-6 text-base leading-relaxed text-slate-700">
-                We are building SaaS-ready housing infrastructure that helps institutions activate bridge housing for arrivals, absorb overflow demand during peaks, and accelerate operational integration with minimal implementation friction.
-              </p>
-            </Reveal>
+            <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-10">
+              <Reveal className="mx-auto max-w-[42ch] text-center lg:mx-0 lg:text-left">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">UNIVERSITY OPERATIONS</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+                  Open the Network to Selected Partner Universities
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-slate-700">
+                  Keep a closed ecosystem by default, then open access to approved partner universities. Students can travel
+                  and stay with verified hosts across campuses at a budget-friendly price.
+                </p>
+              </Reveal>
 
-            <Reveal delayMs={120} className="mt-12 rounded-[32px] border border-slate-200 bg-white p-7 shadow-sm">
-              <div className="relative grid gap-4 md:grid-cols-4">
-                {[
-                  { title: "Student Intake", subtitle: "Arrival wave begins" },
-                  { title: "Bridge Capacity", subtitle: "Verified couch and spare-room supply activated" },
-                  { title: "Operational Layer", subtitle: "Verification, rules, mediation" },
-                  { title: "Institution Dashboard", subtitle: "Visibility and oversight potential" },
-                ].map((step, index) => (
-                  <div key={step.title} className="relative rounded-2xl border border-slate-200 bg-[#f9fbfe] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Step {index + 1}</p>
-                    <h3 className="mt-2 text-base font-semibold text-slate-900">{step.title}</h3>
-                    <p className="mt-2 text-sm text-slate-600">{step.subtitle}</p>
-                  </div>
-                ))}
-                <div
-                  className="pointer-events-none absolute left-0 right-0 top-1/2 hidden h-px -translate-y-1/2 bg-slate-300 md:block"
-                  style={{ animation: "aboutLineFlow 4.5s ease-in-out infinite" }}
-                />
-                <div className="pointer-events-none absolute left-0 right-0 top-1/2 hidden -translate-y-1/2 justify-around md:flex">
-                  {[0, 1, 2].map((dot) => (
-                    <span
-                      key={dot}
-                      className="h-2 w-2 rounded-full bg-slate-500"
-                      style={{ animation: "aboutPulse 2.3s ease-in-out infinite", animationDelay: `${dot * 0.35}s` }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-[#f8fbff] p-4">
-                  <p className="text-sm font-semibold text-slate-900">Emergency Overflow Capacity</p>
-                  <p className="mt-1 text-sm text-slate-600">Rapid activation for high-pressure periods and late arrivals.</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-[#f8fbff] p-4">
-                  <p className="text-sm font-semibold text-slate-900">Institutional Integration Acceleration</p>
-                  <p className="mt-1 text-sm text-slate-600">Framework designed to connect with university support operations.</p>
-                </div>
-              </div>
-            </Reveal>
+      <Reveal delayMs={120} className="w-full">
+        <img
+          src={CLOSED_ECOSYSTEM_OPEN_NETWORK_IMAGE}
+          alt="Closed ecosystem opened to selected partner universities, showing UNIL connected with HSG, UNIGE, UNIBE, and ETH Zurich."
+          className="mx-auto h-auto w-full max-w-[900px] object-contain lg:ml-auto"
+          width={1536}
+          height={1024}
+          loading="lazy"
+          decoding="async"
+        />
+      </Reveal>
+            </div>
           </div>
         </section>
 
@@ -544,40 +531,66 @@ const LandingPage = () => {
             <div className="absolute inset-0 bg-slate-900/56" />
           </div>
 
-          <div className="relative mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-28">
-            <div className="max-w-3xl" style={{ transform: `translateY(${visionOffset}px)` }}>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Vision</p>
-              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-                Housing Built By Students
+          <div className="relative mx-auto max-w-6xl px-6 py-20 sm:px-8 sm:py-24">
+            <div className="max-w-[70ch]" style={{ transform: `translateY(${visionOffset}px)` }}>
+              <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+                Built in Lausanne, Ready to Scale
               </h2>
-              <p className="mt-6 text-base leading-relaxed text-slate-200 sm:text-lg">
-                Access to education should never be blocked by housing gaps. We are building a trusted student housing network that scales city by city, supports university ecosystems, and uses existing resources more sustainably than traditional expansion alone.
-              </p>
-              <p className="mt-4 text-base leading-relaxed text-slate-200 sm:text-lg">
-                Starting in Lausanne, our roadmap is European: a reliable, student-centered housing layer that institutions can work with, and students can depend on.
-              </p>
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-wrap gap-3">
                 <Button
-                  className="rounded-full bg-white px-7 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+                  variant="outline"
+                  className="rounded-full border-slate-300/70 bg-transparent px-7 text-sm font-semibold text-white hover:bg-white/10"
                   onClick={() => {
                     window.location.href = "mailto:partnerships@couch-share.com?subject=University%20Partnership";
                   }}
                 >
                   <Building2 className="mr-2 h-4 w-4" />
-                  Partner With Us
-                </Button>
-                <Button
-                  variant="outline"
-                  className="rounded-full border-slate-300/70 bg-transparent px-7 text-sm font-semibold text-white hover:bg-white/10"
-                  onClick={() => navigate(user ? "/listings" : "/auth")}
-                >
-                  Join the Network
+                  Partner with Couch-Share
                 </Button>
               </div>
             </div>
           </div>
         </section>
       </main>
+
+      <Dialog open={isEarningsDialogOpen} onOpenChange={setIsEarningsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-semibold tracking-tight text-slate-900">
+              Couch-share it. You could earn
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-600">
+              {DEFAULT_NIGHTS} nights at an average CHF {AVERAGE_NIGHTLY_PRICE_CHF} per night.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <p className="text-center text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl">
+              CHF {estimatedEarnings}
+            </p>
+            <p className="text-center text-base text-slate-600">
+              <span className="font-semibold text-slate-900">{estimatedNights} nights</span> at an estimated CHF{" "}
+              {AVERAGE_NIGHTLY_PRICE_CHF} a night
+            </p>
+
+            <Slider
+              value={[estimatedNights]}
+              min={1}
+              max={30}
+              step={1}
+              onValueChange={(value) => setEstimatedNights(value[0] ?? DEFAULT_NIGHTS)}
+              aria-label="Estimated nights"
+            />
+
+            <Button
+              className="w-full rounded-full bg-slate-900 py-6 text-base font-semibold text-white hover:bg-slate-800"
+              onClick={continueToSignUp}
+            >
+              Sign up
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

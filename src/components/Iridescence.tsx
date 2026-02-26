@@ -62,6 +62,7 @@ const Iridescence = ({
 }: IridescenceProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mousePos = useRef({ x: 0.5, y: 0.5 });
+  const [colorR, colorG, colorB] = color;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -81,6 +82,7 @@ const Iridescence = ({
     let animateId = 0;
     let program: Program | null = null;
     let mesh: Mesh | null = null;
+    let disposed = false;
 
     const geometry = new Triangle(gl);
 
@@ -104,7 +106,7 @@ const Iridescence = ({
       fragment: fragmentShader,
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new Color(...color) },
+        uColor: { value: new Color(colorR, colorG, colorB) },
         uResolution: {
           value: new Color(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height),
         },
@@ -117,6 +119,7 @@ const Iridescence = ({
     mesh = new Mesh(gl, { geometry, program });
 
     const update = (time: number) => {
+      if (disposed) return;
       animateId = requestAnimationFrame(update);
       if (!program || !renderer || !mesh) return;
       program.uniforms.uTime.value = time * 0.001;
@@ -142,6 +145,7 @@ const Iridescence = ({
     }
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(animateId);
       window.removeEventListener("resize", handleResize);
       if (mouseReact) {
@@ -152,13 +156,16 @@ const Iridescence = ({
           if (gl.canvas.parentNode === container) {
             container.removeChild(gl.canvas);
           }
+          gl.getExtension("WEBGL_lose_context")?.loseContext();
         } catch (error) {
           console.warn("Failed to remove canvas", error);
         }
+        mesh = null;
+        program = null;
         renderer = null;
       }
     };
-  }, [color, speed, amplitude, mouseReact]);
+  }, [colorR, colorG, colorB, speed, amplitude, mouseReact]);
 
   return <div ref={containerRef} className="iridescence-container" {...rest} />;
 };
