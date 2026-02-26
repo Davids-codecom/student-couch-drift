@@ -11,7 +11,6 @@ import { useToast } from "@/components/ui/use-toast";
 import TermsDialog from "@/components/TermsDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useSession } from "@/hooks/useSession";
-import { upsertUserProfile } from "@/lib/profile";
 import { supabase } from "@/lib/supabaseClient";
 import useIridescenceEnabled from "@/hooks/useIridescenceEnabled";
 
@@ -328,24 +327,18 @@ const Auth = () => {
           throw error;
         }
 
-        const newUser = data.user;
-        if (newUser) {
-          await upsertUserProfile({
-            id: newUser.id,
-            email: newUser.email ?? normalizedEmail,
-            full_name: derivedName.fullName,
-            user_role: userRole,
-            avatar_url: null,
-            bio: null,
-            student_id_url: null,
-            university: null,
-            program_name: null,
-            program_year: null,
-            program_type: null,
+        const isAlreadyVerified = Boolean(data.user?.email_confirmed_at || data.session);
+        await refreshUser();
+        if (isAlreadyVerified) {
+          setStatusMessage("Account created and signed in.");
+          toast({
+            title: "Account ready",
+            description: "Your account is active now.",
           });
+          navigate("/listings", { replace: true });
+          return;
         }
 
-        await refreshUser();
         setMode("signin");
         setPassword("");
         setPendingVerificationEmail(normalizedEmail);
