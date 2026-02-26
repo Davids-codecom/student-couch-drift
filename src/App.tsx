@@ -72,7 +72,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <VerificationReminder />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <AuthCallbackRedirector />
             <GlobalNav />
             <Routes>

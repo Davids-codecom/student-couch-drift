@@ -1,4 +1,3 @@
-import { publicSupabase } from "@/lib/supabasePublic";
 import { supabase } from "@/lib/supabaseClient";
 
 interface ListingAvailability {
@@ -82,7 +81,7 @@ const isUuid = (value: string | null | undefined) => {
 };
 
 const baseListingQuery = () =>
-  publicSupabase
+  supabase
     .from<ListingRow>("user_listings")
     .select("*")
     .order("created_at", { ascending: false });
@@ -119,7 +118,7 @@ export interface CreateListingInput {
 }
 
 export const fetchListings = async (): Promise<ListingRecord[]> => {
-  const { data, error } = await publicSupabase
+  const { data, error } = await supabase
     .from<ListingRow>("user_listings")
     .select("*")
     .order("created_at", { ascending: false });
