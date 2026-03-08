@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
 interface ListingAvailability {
@@ -30,6 +31,19 @@ type ListingRow = {
   availability_json: ListingAvailability | null;
   created_at: string | null;
 };
+
+const PUBLIC_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const PUBLIC_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+const publicListingsClient = PUBLIC_SUPABASE_URL && PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    })
+  : null;
 
 export interface ListingRecord {
   id: string;
@@ -123,11 +137,46 @@ export const fetchListings = async (): Promise<ListingRecord[]> => {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) {
+  const signedRows = data ?? [];
+
+  if (!publicListingsClient) {
+    if (error) {
+      throw error;
+    }
+    return signedRows.map(mapListingRow);
+  }
+
+  const { data: publicData, error: publicError } = await publicListingsClient
+    .from<ListingRow>("user_listings")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const publicRows = publicData ?? [];
+
+  if (error && publicError) {
     throw error;
   }
 
-  return (data ?? []).map(mapListingRow);
+  if (error && !publicError) {
+    return publicRows.map(mapListingRow);
+  }
+
+  const mergedById = new Map<string, ListingRow>();
+  for (const row of publicRows) {
+    mergedById.set(row.id, row);
+  }
+  for (const row of signedRows) {
+    // Keep signed-in row values when both queries return the same listing.
+    mergedById.set(row.id, row);
+  }
+
+  return Array.from(mergedById.values())
+    .sort((a, b) => {
+      const aTs = a.created_at ? Date.parse(a.created_at) : 0;
+      const bTs = b.created_at ? Date.parse(b.created_at) : 0;
+      return bTs - aTs;
+    })
+    .map(mapListingRow);
 };
 
 export const fetchListingById = async (listingId: string): Promise<ListingRecord | null> => {

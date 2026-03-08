@@ -124,15 +124,29 @@ const DEFAULT_LOCATION_DESCRIPTION = "Calm neighborhood";
 const DEFAULT_LISTING_DESCRIPTION = "Cozy couch and a kitchen to share";
 const DEFAULT_PRICE_PER_NIGHT = "30";
 
+const isValidListingPhotoUrl = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  // Ignore stale build-time asset paths persisted in DB (e.g. /assets/couch1-<hash>.jpg).
+  if (trimmed.startsWith("/assets/")) return false;
+  return true;
+};
+
 const resolveListingPhotos = (listing: CouchListing) => {
   if (listing.gallery?.length) {
-    return listing.gallery;
+    const validGallery = listing.gallery.filter((photo) => isValidListingPhotoUrl(photo));
+    if (validGallery.length) {
+      return validGallery;
+    }
   }
   const availabilityPhotos = listing.availability?.photos;
   if (Array.isArray(availabilityPhotos) && availabilityPhotos.length) {
-    return availabilityPhotos;
+    const validAvailabilityPhotos = availabilityPhotos.filter((photo) => isValidListingPhotoUrl(photo));
+    if (validAvailabilityPhotos.length) {
+      return validAvailabilityPhotos;
+    }
   }
-  return listing.image ? [listing.image] : [];
+  return listing.image && isValidListingPhotoUrl(listing.image) ? [listing.image] : [];
 };
 
 const HOST_PROGRAM_TYPE_LABELS: Record<string, string> = {
@@ -141,153 +155,6 @@ const HOST_PROGRAM_TYPE_LABELS: Record<string, string> = {
   phd: "Doctorate (PhD)",
   other: "Other program",
 };
-
-const defaultListings: CouchListing[] = [
-  {
-    id: "static-1",
-    image: couch1,
-    gallery: [couch1],
-    price: "$25",
-    title: "Leather Corner Couch",
-    host: "Sarah M.",
-    hostEmail: null,
-    location: "Downtown Campus",
-    country: "Latvia",
-    city: "Riga",
-    addressLine: "Downtown Campus",
-    coordinates: { lat: 56.9496, lng: 24.1052 },
-    availability: {
-      start: "2024-10-15T00:00:00.000Z",
-      end: "2024-10-25T23:59:59.000Z",
-    },
-    availableDates: formatAvailabilityWindow({
-      start: "2024-10-15T00:00:00.000Z",
-      end: "2024-10-25T23:59:59.000Z",
-    }),
-    description: "Comfortable leather couch with plants and natural lighting. Perfect for studying or relaxing near campus.",
-    hostId: null,
-  },
-  {
-    id: "static-2",
-    image: couch2,
-    gallery: [couch2],
-    price: "$18",
-    title: "Cozy Beige Sectional",
-    host: "Mike T.",
-    hostEmail: null,
-    location: "North Dorms",
-    country: "Latvia",
-    city: "Riga",
-    addressLine: "North Dorms",
-    coordinates: { lat: 56.9578, lng: 24.1173 },
-    availability: {
-      start: "2024-10-20T00:00:00.000Z",
-      end: "2024-10-30T23:59:59.000Z",
-    },
-    availableDates: formatAvailabilityWindow({
-      start: "2024-10-20T00:00:00.000Z",
-      end: "2024-10-30T23:59:59.000Z",
-    }),
-    description: "Spacious sectional with great natural light. Great for overnight stays during exam week.",
-    hostId: null,
-  },
-  {
-    id: "static-3",
-    image: couch3,
-    gallery: [couch3],
-    price: "$22",
-    title: "Modern Grey Sectional",
-    host: "Emma K.",
-    hostEmail: null,
-    location: "Library District",
-    country: "Latvia",
-    city: "Riga",
-    addressLine: "Library District",
-    coordinates: { lat: 56.9461, lng: 24.1177 },
-    availability: {
-      start: "2024-10-18T00:00:00.000Z",
-      end: "2024-10-28T23:59:59.000Z",
-    },
-    availableDates: formatAvailabilityWindow({
-      start: "2024-10-18T00:00:00.000Z",
-      end: "2024-10-28T23:59:59.000Z",
-    }),
-    description: "Perfect spot for late night study sessions. Close to the library and quiet.",
-    hostId: null,
-  },
-  {
-    id: "static-4",
-    image: couch4,
-    gallery: [couch4],
-    price: "$28",
-    title: "Green Corduroy Sectional",
-    host: "Alex R.",
-    hostEmail: null,
-    location: "Student Village",
-    country: "Latvia",
-    city: "Riga",
-    addressLine: "Student Village",
-    coordinates: { lat: 56.9423, lng: 24.0998 },
-    availability: {
-      start: "2024-10-16T00:00:00.000Z",
-      end: "2024-10-26T23:59:59.000Z",
-    },
-    availableDates: formatAvailabilityWindow({
-      start: "2024-10-16T00:00:00.000Z",
-      end: "2024-10-26T23:59:59.000Z",
-    }),
-    description: "Unique green sectional with plants and cozy vibes. Great for extended stays.",
-    hostId: null,
-  },
-  {
-    id: "static-5",
-    image: couch5,
-    gallery: [couch5],
-    price: "$32",
-    title: "Modular Beige Sofa",
-    host: "Jamie L.",
-    hostEmail: null,
-    location: "Arts Quarter",
-    country: "Latvia",
-    city: "Riga",
-    addressLine: "Arts Quarter",
-    coordinates: { lat: 56.9521, lng: 24.108 },
-    availability: {
-      start: "2024-10-22T00:00:00.000Z",
-      end: "2024-11-01T23:59:59.000Z",
-    },
-    availableDates: formatAvailabilityWindow({
-      start: "2024-10-22T00:00:00.000Z",
-      end: "2024-11-01T23:59:59.000Z",
-    }),
-    description: "Spacious modular sofa in bright apartment. Perfect for creative students.",
-    hostId: null,
-  },
-  {
-    id: "static-6",
-    image: couch6,
-    gallery: [couch6],
-    price: "$35",
-    title: "Designer Grey Sectional",
-    host: "Taylor B.",
-    hostEmail: null,
-    location: "Campus Heights",
-    country: "Latvia",
-    city: "Riga",
-    addressLine: "Campus Heights",
-    coordinates: { lat: 56.9448, lng: 24.1312 },
-    availability: {
-      start: "2024-10-19T00:00:00.000Z",
-      end: "2024-10-29T23:59:59.000Z",
-    },
-    availableDates: formatAvailabilityWindow({
-      start: "2024-10-19T00:00:00.000Z",
-      end: "2024-10-29T23:59:59.000Z",
-    }),
-    description: "Modern designer couch in beautiful apartment with exposed beams. Premium comfort.",
-    hostId: null,
-  }
-];
 
 const PHOTO_BUCKET = "couch-photos";
 
@@ -689,7 +556,7 @@ const CouchListings = () => {
           published:
             typeof editingListing.availability?.published === "boolean"
               ? editingListing.availability.published
-              : editingListing.isPublished ?? false,
+              : editingListing.isPublished ?? true,
         };
 
         await upsertListing({
@@ -863,7 +730,8 @@ const CouchListings = () => {
               addressLine: listing.availability.addressLine ?? null,
               photos: Array.isArray(listing.availability.photos)
                 ? listing.availability.photos.filter(
-                    (photo): photo is string => typeof photo === "string" && photo.trim().length > 0,
+                    (photo): photo is string =>
+                      typeof photo === "string" && isValidListingPhotoUrl(photo),
                   )
                 : null,
               coordinates:
@@ -880,7 +748,7 @@ const CouchListings = () => {
           : null;
 
         const hasRange = availability?.start && availability?.end;
-        const published = typeof availability?.published === "boolean" ? availability.published : false;
+        const published = typeof availability?.published === "boolean" ? availability.published : true;
         const galleryPhotos = Array.isArray(availability?.photos) ? availability.photos : [];
         const image = listing.image ?? galleryPhotos[0] ?? fallbackImages[index % fallbackImages.length];
         const structuredCountry = availability?.country?.trim() || null;
@@ -1228,9 +1096,7 @@ const CouchListings = () => {
     };
   }, [remoteListings]);
 
-  const allListings = useMemo(() => (
-    remoteListings.length > 0 ? remoteListings : defaultListings
-  ), [remoteListings]);
+  const allListings = useMemo(() => remoteListings, [remoteListings]);
 
   const myListings = useMemo(() => {
     if (!profile?.id) {

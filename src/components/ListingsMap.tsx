@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
 import L from "leaflet";
@@ -45,24 +44,8 @@ const ListingsMap = ({ listings, userLocation, isLoading = false, onSelect }: Li
       popupAnchor: [0, -72],
     });
 
-  const center = useMemo<LatLngExpression>(() => {
-    const preferred = listings.find((listing) => {
-      const { lat, lng } = listing.coordinates;
-      return Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0;
-    });
-
-    if (preferred) {
-      return [preferred.coordinates.lat, preferred.coordinates.lng];
-    }
-
-    if (userLocation) {
-      return [userLocation.lat, userLocation.lng];
-    }
-
-    return DEFAULT_CENTER;
-  }, [listings, userLocation]);
-
-  const zoom = userLocation ? 13 : listings.length > 1 ? 12 : DEFAULT_ZOOM;
+  const center: LatLngExpression = DEFAULT_CENTER;
+  const zoom = DEFAULT_ZOOM;
 
   if (!isBrowser) {
     return null;

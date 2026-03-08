@@ -290,7 +290,7 @@ const LandingPage = () => {
                   variant="outline"
                   className="min-w-[220px] justify-center rounded-full border-slate-200/70 bg-transparent px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 sm:px-7 sm:py-3.5 sm:text-base"
                   onClick={() => {
-                    window.location.href = "mailto:partnerships@couch-share.com?subject=University%20Partnership";
+                    window.location.href = "mailto:davids.akis@unil.ch?subject=University%20Partnership";
                   }}
                 >
                   Partner with Couch-Share
@@ -541,7 +541,7 @@ const LandingPage = () => {
                   variant="outline"
                   className="rounded-full border-slate-300/70 bg-transparent px-7 text-sm font-semibold text-white hover:bg-white/10"
                   onClick={() => {
-                    window.location.href = "mailto:partnerships@couch-share.com?subject=University%20Partnership";
+                    window.location.href = "mailto:davids.akis@unil.ch?subject=University%20Partnership";
                   }}
                 >
                   <Building2 className="mr-2 h-4 w-4" />
