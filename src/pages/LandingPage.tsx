@@ -309,7 +309,7 @@ const LandingPage = () => {
               </h2>
             </Reveal>
             <div className="grid gap-4 sm:grid-cols-2 lg:gap-5">
-              <CounterCard value={41} suffix="%" label="Students facing housing pressure in peak intake periods." />
+              <CounterCard value={65} suffix="%" label="Students facing housing pressure in peak intake periods." />
               <CounterCard value={6} suffix="w" label="Average search time before stable placement." />
               <CounterCard value={3} prefix="+" suffix=" years" label="Typical lead time for new housing delivery." />
               <CounterCard value={24} suffix="/7" label="Support availability students expect during issues." />
